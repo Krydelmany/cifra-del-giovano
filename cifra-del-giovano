@@ -1,0 +1,139 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <random>
+#include <ctime>
+
+class CifraAleatoria {
+private:
+    unsigned int seed;
+    std::vector<int> deslocamentos;
+
+public:
+    CifraAleatoria(unsigned int customSeed = 0) {
+        seed = customSeed == 0 ? static_cast<unsigned int>(time(nullptr)) : customSeed;
+    }
+    
+    std::pair<std::string, unsigned int> criptografar(const std::string& texto) {
+        std::mt19937 gerador(seed);
+        std::uniform_int_distribution<int> distribuicao(1, 25);
+        
+        std::string textoCifrado;
+        deslocamentos.clear();
+        
+        for (char c : texto) {
+            if (isalpha(c)) {
+                int deslocamento = distribuicao(gerador);
+                deslocamentos.push_back(deslocamento);
+                
+                char base = isupper(c) ? 'A' : 'a';
+                
+                char charCifrado = ((c - base + deslocamento) % 26) + base;
+                textoCifrado += charCifrado;
+            }
+            else {
+                textoCifrado += c;
+                deslocamentos.push_back(0);
+            }
+        }
+        
+        return {textoCifrado, seed};
+    }
+    
+    std::string descriptografar(const std::string& textoCifrado, unsigned int chave) {
+        std::mt19937 gerador(chave);
+        std::uniform_int_distribution<int> distribuicao(1, 25);
+        
+        std::string textoOriginal;
+        
+        for (char c : textoCifrado) {
+            if (isalpha(c)) {
+                int deslocamento = distribuicao(gerador);                
+
+                char base = isupper(c) ? 'A' : 'a';
+
+                char charOriginal = ((c - base - deslocamento + 26) % 26) + base;
+                textoOriginal += charOriginal;
+            }
+            else {
+                textoOriginal += c;
+            }
+        }
+        
+        return textoOriginal;
+    }
+};
+
+int main() {
+    CifraAleatoria cifra;
+    bool executar = true;
+    int opcao;
+
+    while (executar) {
+        std::cout << "\n{====== Cifra del Giovano ======}\n";
+        std::cout << "1. Criptografar texto\n";
+        std::cout << "2. Descriptografar texto\n";
+        std::cout << "3. Sair\n";
+        std::cout << "Escolha uma opcao: ";
+        std::cin >> opcao;
+        std::cin.ignore();
+
+        switch (opcao) {
+            case 1: {
+                std::string textoOriginal;
+                std::cout << "\nDigite o texto para criptografar: ";
+                std::getline(std::cin, textoOriginal);
+                
+                auto [textoCifrado, chave] = cifra.criptografar(textoOriginal);
+                
+                std::cout << "\nTexto cifrado: " << textoCifrado << std::endl;
+                std::cout << "Chave de descriptografia: " << chave << std::endl;
+                
+                std::string verificacao = cifra.descriptografar(textoCifrado, chave);
+                std::cout << "\nVerificacao da descriptografia: ";
+                if (verificacao == textoOriginal) {
+                    std::cout << "CORRETO" << std::endl;
+                } else {
+                    std::cout << "ERRO" << std::endl;
+                    std::cout << "Texto original: " << textoOriginal << std::endl;
+                    std::cout << "Texto descriptografado: " << verificacao << std::endl;
+                }
+                break;
+            }
+            case 2: {
+                std::string textoCifrado;
+                unsigned int chave;
+                
+                std::cout << "\nDigite o texto cifrado: ";
+                std::getline(std::cin, textoCifrado);
+                
+                std::cout << "Digite a chave de descriptografia: ";
+                std::cin >> chave;
+                std::cin.ignore();
+                
+                std::string textoDescriptografado = cifra.descriptografar(textoCifrado, chave);
+                std::cout << "\nTexto descriptografado: " << textoDescriptografado << std::endl;
+                
+                std::cout << "\nA descriptografia esta correta? (s/n): ";
+                char resposta;
+                std::cin >> resposta;
+                std::cin.ignore();
+                
+                if (resposta == 's' || resposta == 'S') {
+                    std::cout << "Confirmado: descriptografia bem sucedida!" << std::endl;
+                } else {
+                    std::cout << "Erro na descriptografia. Verifique a chave utilizada." << std::endl;
+                }
+                break;
+            }
+            case 3:
+                executar = false;
+                std::cout << "\nEncerrando." << std::endl;
+                break;
+            default:
+                std::cout << "\nOpcao invalida. Tente novamente." << std::endl;
+        }
+    }
+    
+    return 0;
+}
